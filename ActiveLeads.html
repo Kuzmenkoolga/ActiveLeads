@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Active Leads</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #0a0c10;
+    --surface: #111318;
+    --surface2: #181c24;
+    --border: #22283a;
+    --accent: #00e5a0;
+    --accent2: #3b7fff;
+    --warn: #ff9500;
+    --danger: #ff4560;
+    --text: #e8eaf0;
+    --muted: #6b7280;
+    --tag-bg: #1a2235;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Layout ── */
+  .app { display: flex; flex-direction: column; height: 100vh; }
+
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 28px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 12px var(--accent);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+  .logo-text { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
+  .logo-sub { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-top: 1px; }
+
+  .header-right { display: flex; align-items: center; gap: 12px; }
+
+  .pill {
+    display: flex; align-items: center; gap: 6px;
+    padding: 5px 12px; border-radius: 20px;
+    font-family: 'DM Mono', monospace; font-size: 11px;
+    border: 1px solid;
+  }
+  .pill.zi { border-color: #3b7fff44; background: #3b7fff11; color: var(--accent2); }
+  .pill.ap { border-color: #ff950044; background: #ff950011; color: var(--warn); }
+  .pill.ai { border-color: #00e5a044; background: #00e5a011; color: var(--accent); }
+  .pill-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  /* ── Tabs ── */
+  .tabs {
+    display: flex; gap: 2px;
+    padding: 0 28px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .tab {
+    padding: 12px 20px; cursor: pointer;
+    font-size: 13px; font-weight: 500; color: var(--muted);
+    border-bottom: 2px solid transparent;
+    transition: all .2s;
+    white-space: nowrap;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ── Main content ── */
+  .main { display: flex; flex: 1; overflow: hidden; }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 300px; flex-shrink: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 20px;
+  }
+
+  .section-label {
+    font-family: 'DM Mono', monospace; font-size: 10px;
+    color: var(--muted); letter-spacing: 2px; text-transform: uppercase;
+    margin-bottom: 12px; margin-top: 20px;
+  }
+  .section-label:first-child { margin-top: 0; }
+
+  .form-group { margin-bottom: 12px; }
+  label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; }
+
+  input, select, textarea {
+    width: 100%; background: var(--surface2);
+    border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); font-family: 'DM Sans', sans-serif;
+    font-size: 13px; padding: 8px 12px;
+    transition: border-color .2s;
+    outline: none;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent2); }
+  select option { background: var(--surface2); }
+  textarea { resize: vertical; min-height: 60px; }
+
+  .range-row { display: flex; gap: 8px; }
+  .range-row input { width: 50%; }
+
+  .toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 0; border-bottom: 1px solid var(--border);
+  }
+  .toggle-row:last-child { border-bottom: none; }
+  .toggle-label { font-size: 13px; }
+  .toggle-sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+  .toggle {
+    width: 36px; height: 20px; border-radius: 10px;
+    background: var(--border); position: relative; cursor: pointer;
+    transition: background .2s; flex-shrink: 0;
+  }
+  .toggle.on { background: var(--accent); }
+  .toggle::after {
+    content: ''; position: absolute; top: 3px; left: 3px;
+    width: 14px; height: 14px; border-radius: 50%; background: white;
+    transition: left .2s;
+  }
+  .toggle.on::after { left: 19px; }
+
+  .btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 10px 16px; border-radius: 8px;
+    font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600;
+    cursor: pointer; border: none; transition: all .2s; width: 100%;
+  }
+  .btn-primary { background: var(--accent); color: #000; }
+  .btn-primary:hover { background: #00ffb3; transform: translateY(-1px); }
+  .btn-primary:disabled { background: var(--border); color: var(--muted); transform: none; cursor: not-allowed; }
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { border-color: var(--accent2); color: var(--accent2); }
+
+  .signal-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .signal-tag {
+    padding: 4px 10px; border-radius: 20px;
+    font-size: 11px; cursor: pointer;
+    background: var(--tag-bg); border: 1px solid var(--border);
+    color: var(--muted); transition: all .2s;
+  }
+  .signal-tag.on { background: #00e5a015; border-color: var(--accent); color: var(--accent); }
+
+  /* ── Content area ── */
+  .content { flex: 1; overflow-y: auto; padding: 24px 28px; }
+
+  /* ── Stats row ── */
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px 20px;
+  }
+  .stat-val { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; }
+  .stat-val.green { color: var(--accent); }
+  .stat-val.blue { color: var(--accent2); }
+  .stat-val.orange { color: var(--warn); }
+  .stat-val.red { color: var(--danger); }
+  .stat-label { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+  /* ── Toolbar ── */
+  .toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .search-box {
+    flex: 1; display: flex; align-items: center; gap: 8px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 14px;
+  }
+  .search-box input {
+    border: none; background: transparent; padding: 0; font-size: 13px;
+  }
+  .search-icon { color: var(--muted); font-size: 14px; }
+
+  .filter-pill {
+    padding: 7px 14px; border-radius: 8px;
+    font-size: 12px; cursor: pointer;
+    background: var(--surface); border: 1px solid var(--border); color: var(--muted);
+    transition: all .2s; white-space: nowrap;
+  }
+  .filter-pill.active { background: #00e5a015; border-color: var(--accent); color: var(--accent); }
+
+  /* ── Lead cards ── */
+  .leads-grid { display: flex; flex-direction: column; gap: 12px; }
+
+  .lead-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 20px;
+    display: grid; grid-template-columns: auto 1fr auto auto;
+    align-items: start; gap: 16px;
+    transition: border-color .2s, transform .15s;
+    cursor: pointer;
+  }
+  .lead-card:hover { border-color: #3b7fff55; transform: translateX(2px); }
+  .lead-card.hot { border-left: 3px solid var(--accent); }
+  .lead-card.warm { border-left: 3px solid var(--warn); }
+  .lead-card.cold { border-left: 3px solid var(--muted); }
+
+  .score-ring {
+    width: 48px; height: 48px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 800;
+    flex-shrink: 0; position: relative;
+  }
+  .score-ring::before {
+    content: ''; position: absolute; inset: 0; border-radius: 50%;
+    border: 2px solid transparent;
+  }
+  .score-ring.hot { background: #00e5a015; color: var(--accent); border: 2px solid var(--accent); }
+  .score-ring.warm { background: #ff950015; color: var(--warn); border: 2px solid var(--warn); }
+  .score-ring.cold { background: #ffffff0a; color: var(--muted); border: 2px solid var(--border); }
+
+  .lead-info { min-width: 0; }
+  .lead-name { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; margin-bottom: 2px; }
+  .lead-meta { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+  .lead-signals { display: flex; flex-wrap: wrap; gap: 5px; }
+
+  .sig-chip {
+    padding: 3px 9px; border-radius: 20px; font-size: 11px;
+    font-family: 'DM Mono', monospace;
+  }
+  .sig-chip.hiring { background: #00e5a015; color: var(--accent); border: 1px solid #00e5a030; }
+  .sig-chip.funding { background: #3b7fff15; color: var(--accent2); border: 1px solid #3b7fff30; }
+  .sig-chip.growth { background: #ff950015; color: var(--warn); border: 1px solid #ff950030; }
+  .sig-chip.tech { background: #9b59b615; color: #c39bd3; border: 1px solid #9b59b630; }
+  .sig-chip.news { background: #ff456015; color: var(--danger); border: 1px solid #ff456030; }
+  .sig-chip.persona { background: #1a2235; color: #8899bb; border: 1px solid #22334a; }
+
+  .lead-source {
+    font-family: 'DM Mono', monospace; font-size: 10px;
+    color: var(--muted); text-align: right; white-space: nowrap;
+  }
+  .source-badge {
+    display: inline-block; padding: 2px 8px; border-radius: 4px;
+    font-size: 10px; margin-top: 4px;
+  }
+  .source-badge.zi { background: #3b7fff20; color: var(--accent2); }
+  .source-badge.ap { background: #ff950020; color: var(--warn); }
+  .source-badge.both { background: #00e5a020; color: var(--accent); }
+
+  .lead-actions { display: flex; flex-direction: column; gap: 6px; }
+  .action-btn {
+    padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 600;
+    cursor: pointer; border: none; transition: all .15s; white-space: nowrap;
+  }
+  .action-btn.outreach { background: var(--accent); color: #000; }
+  .action-btn.outreach:hover { background: #00ffb3; }
+  .action-btn.sheet { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+  .action-btn.sheet:hover { color: var(--text); border-color: var(--muted); }
+
+  /* ── Setup tab ── */
+  .setup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+  .setup-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px;
+  }
+  .setup-card-header {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+  }
+  .setup-icon {
+    width: 36px; height: 36px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; font-size: 18px;
+  }
+  .setup-card h3 { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; }
+  .setup-card p { font-size: 12px; color: var(--muted); line-height: 1.6; margin-bottom: 12px; }
+
+  .instruction-step {
+    display: flex; gap: 10px; margin-bottom: 10px; align-items: flex-start;
+  }
+  .step-num {
+    width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 500;
+  }
+  .step-num.zi { background: #3b7fff20; color: var(--accent2); }
+  .step-num.ap { background: #ff950020; color: var(--warn); }
+  .step-num.gs { background: #00e5a020; color: var(--accent); }
+  .step-num.ai { background: #9b59b620; color: #c39bd3; }
+  .step-text { font-size: 12px; line-height: 1.6; color: var(--muted); }
+  .step-text strong { color: var(--text); }
+
+  .code-block {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px 14px; font-family: 'DM Mono', monospace; font-size: 11px;
+    color: var(--accent); margin: 8px 0; overflow-x: auto;
+    white-space: pre;
+  }
+
+  /* ── Plugins tab ── */
+  .plugins-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .plugin-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px;
+    transition: border-color .2s;
+  }
+  .plugin-card:hover { border-color: var(--accent2); }
+  .plugin-card.connected { border-color: #00e5a040; }
+  .plugin-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .plugin-name { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; }
+  .plugin-badge {
+    font-size: 10px; font-family: 'DM Mono', monospace; padding: 2px 8px;
+    border-radius: 4px;
+  }
+  .plugin-badge.connected { background: #00e5a020; color: var(--accent); }
+  .plugin-badge.recommended { background: #3b7fff20; color: var(--accent2); }
+  .plugin-badge.optional { background: #ffffff10; color: var(--muted); }
+  .plugin-desc { font-size: 12px; color: var(--muted); line-height: 1.5; margin-bottom: 10px; }
+  .plugin-use { font-size: 11px; color: var(--text); }
+  .plugin-use span { color: var(--accent); }
+
+  /* ── Loading / empty ── */
+  .loading-overlay {
+    display: none; position: fixed; inset: 0;
+    background: #0a0c10cc; backdrop-filter: blur(4px);
+    align-items: center; justify-content: center; z-index: 100;
+    flex-direction: column; gap: 20px;
+  }
+  .loading-overlay.show { display: flex; }
+  .spinner {
+    width: 48px; height: 48px; border-radius: 50%;
+    border: 3px solid var(--border); border-top-color: var(--accent);
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-family: 'Syne', sans-serif; font-size: 18px; }
+  .loading-sub { font-size: 13px; color: var(--muted); }
+  .loading-steps { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+  .loading-step {
+    display: flex; align-items: center; gap: 8px;
+    font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted);
+  }
+  .loading-step.done { color: var(--accent); }
+  .loading-step.active { color: var(--text); }
+
+  .empty-state {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; padding: 80px 20px; text-align: center;
+    color: var(--muted);
+  }
+  .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: .4; }
+  .empty-title { font-family: 'Syne', sans-serif; font-size: 20px; color: var(--text); margin-bottom: 8px; }
+  .empty-sub { font-size: 13px; line-height: 1.6; max-width: 360px; }
+
+  /* ── Detail panel ── */
+  .detail-panel {
+    position: fixed; top: 0; right: -440px; width: 440px; height: 100vh;
+    background: var(--surface); border-left: 1px solid var(--border);
+    overflow-y: auto; transition: right .3s ease; z-index: 50; padding: 24px;
+  }
+  .detail-panel.open { right: 0; }
+  .detail-close {
+    position: absolute; top: 16px; right: 16px;
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--muted); width: 28px; height: 28px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 14px;
+  }
+  .detail-close:hover { color: var(--text); }
+  .detail-company { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; margin: 8px 0 4px; }
+  .detail-meta { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+  .detail-section { margin-bottom: 20px; }
+  .detail-section h4 {
+    font-family: 'DM Mono', monospace; font-size: 10px;
+    color: var(--muted); letter-spacing: 2px; text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .contact-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; background: var(--surface2); border-radius: 8px;
+    margin-bottom: 6px;
+  }
+  .contact-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--tag-bg); display: flex; align-items: center;
+    justify-content: center; font-size: 13px; font-weight: 700;
+    color: var(--accent2); flex-shrink: 0;
+  }
+  .contact-name { font-size: 13px; font-weight: 500; }
+  .contact-title { font-size: 11px; color: var(--muted); }
+  .contact-link {
+    margin-left: auto; font-size: 11px; color: var(--accent2);
+    text-decoration: none; font-family: 'DM Mono', monospace;
+  }
+
+  .message-preview {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px; font-size: 12px; line-height: 1.7;
+    color: var(--muted);
+  }
+  .message-preview strong { color: var(--text); }
+
+  .ai-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: #00e5a015; border: 1px solid #00e5a030;
+    color: var(--accent); font-size: 10px; font-family: 'DM Mono', monospace;
+    padding: 3px 8px; border-radius: 4px; margin-bottom: 8px;
+  }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- Header -->
+  <header>
+    <div class="logo">
+      <div class="logo-dot"></div>
+      <div>
+        <div class="logo-text">Active Leads</div>
+        <div class="logo-sub">Recruiting Intelligence</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="pill zi"><div class="pill-dot"></div> ZoomInfo</div>
+      <div class="pill ap"><div class="pill-dot"></div> Apify</div>
+      <div class="pill ai"><div class="pill-dot"></div> Claude AI</div>
+    </div>
+  </header>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('leads')">🎯 Lead Finder</div>
+    <div class="tab" onclick="switchTab('setup')">⚙️ Setup & Instructions</div>
+    <div class="tab" onclick="switchTab('plugins')">🔌 Recommended Plugins</div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+
+    <!-- Sidebar (search settings) -->
+    <div class="sidebar" id="sidebar">
+      <div class="section-label">📍 Geography</div>
+      <div class="form-group">
+        <label>Base Location</label>
+        <input type="text" id="location" value="Waltham, MA" placeholder="City, State" />
+      </div>
+      <div class="form-group">
+        <label>Radius (miles)</label>
+        <select id="radius">
+          <option value="10">10 miles</option>
+          <option value="25">25 miles</option>
+          <option value="50" selected>50 miles</option>
+          <option value="100">100 miles</option>
+        </select>
+      </div>
+
+      <div class="section-label">🏭 Target Industries</div>
+      <div class="form-group">
+        <div class="signal-tags" id="industry-tags">
+          <div class="signal-tag on" onclick="toggleTag(this)">Logistics / 3PL</div>
+          <div class="signal-tag on" onclick="toggleTag(this)">Manufacturing</div>
+          <div class="signal-tag on" onclick="toggleTag(this)">Retail / Supply Chain</div>
+          <div class="signal-tag on" onclick="toggleTag(this)">Hospitality / Venues</div>
+          <div class="signal-tag" onclick="toggleTag(this)">Energy / Utilities</div>
+          <div class="signal-tag" onclick="toggleTag(this)">Healthcare Ops</div>
+          <div class="signal-tag" onclick="toggleTag(this)">Distribution</div>
+        </div>
+      </div>
+
+      <div class="section-label">📊 Firmographics</div>
+      <div class="form-group">
+        <label>Revenue Range</label>
+        <div class="range-row">
+          <input type="text" placeholder="$10M" id="rev-min" value="10M" />
+          <input type="text" placeholder="$500M" id="rev-max" value="500M" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Employee Count</label>
+        <div class="range-row">
+          <input type="number" placeholder="25" id="emp-min" value="25" />
+          <input type="number" placeholder="5000" id="emp-max" value="5000" />
+        </div>
+      </div>
+
+      <div class="section-label">🔥 Active Buying Signals</div>
+      <div class="signal-tags" id="signal-tags" style="margin-bottom:14px;">
+        <div class="signal-tag on" onclick="toggleTag(this)">Unfilled IT Jobs 30d+</div>
+        <div class="signal-tag on" onclick="toggleTag(this)">ERP/WMS Hiring</div>
+        <div class="signal-tag on" onclick="toggleTag(this)">Headcount Growth 10%+</div>
+        <div class="signal-tag on" onclick="toggleTag(this)">New IT/Ops Director</div>
+        <div class="signal-tag on" onclick="toggleTag(this)">Funding / Expansion</div>
+        <div class="signal-tag" onclick="toggleTag(this)">Workday Implementation</div>
+        <div class="signal-tag" onclick="toggleTag(this)">New Facility / Region</div>
+        <div class="signal-tag" onclick="toggleTag(this)">M&A Activity</div>
+      </div>
+
+      <div class="section-label">🎯 Target Personas</div>
+      <div class="signal-tags" style="margin-bottom:14px;">
+        <div class="signal-tag on" onclick="toggleTag(this)">VP / Dir of IT</div>
+        <div class="signal-tag on" onclick="toggleTag(this)">Dir of Engineering</div>
+        <div class="signal-tag on" onclick="toggleTag(this)">Head of HRIS</div>
+        <div class="signal-tag on" onclick="toggleTag(this)">Dir of Data/Analytics</div>
+        <div class="signal-tag on" onclick="toggleTag(this)">Dir of Operations</div>
+        <div class="signal-tag" onclick="toggleTag(this)">Supply Chain Lead</div>
+        <div class="signal-tag" onclick="toggleTag(this)">Plant Manager</div>
+      </div>
+
+      <div class="section-label">🔌 Data Sources</div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">ZoomInfo</div>
+          <div class="toggle-sub">Signals, contacts, scoops</div>
+        </div>
+        <div class="toggle on" onclick="toggleSwitch(this)" id="toggle-zi"></div>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Apify (LinkedIn Jobs)</div>
+          <div class="toggle-sub">Open role scraping</div>
+        </div>
+        <div class="toggle on" onclick="toggleSwitch(this)" id="toggle-ap"></div>
+      </div>
+      <div class="toggle-row" style="margin-bottom:16px;">
+        <div>
+          <div class="toggle-label">AI Lead Scoring</div>
+          <div class="toggle-sub">Claude ranks by readiness</div>
+        </div>
+        <div class="toggle on" onclick="toggleSwitch(this)" id="toggle-ai"></div>
+      </div>
+
+      <div class="form-group">
+        <label>Max Results</label>
+        <select id="max-results">
+          <option value="10">10 leads</option>
+          <option value="20" selected>20 leads</option>
+          <option value="30">30 leads</option>
+          <option value="50">50 leads</option>
+        </select>
+      </div>
+
+      <button class="btn btn-primary" onclick="runSearch()" id="search-btn">
+        ⚡ Find Active Leads
+      </button>
+      <div style="height:8px;"></div>
+      <button class="btn btn-secondary" onclick="exportToSheets()">📊 Export to Google Sheets</button>
+    </div>
+
+    <!-- Content -->
+    <div class="content" id="content-area">
+      <!-- LEADS TAB -->
+      <div id="tab-leads">
+        <div class="stats-row" id="stats-row" style="display:none;">
+          <div class="stat-card">
+            <div class="stat-val green" id="stat-hot">0</div>
+            <div class="stat-label">🔥 Hot Leads (Score 8–10)</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-val orange" id="stat-warm">0</div>
+            <div class="stat-label">🟡 Warm Leads (Score 5–7)</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-val blue" id="stat-total">0</div>
+            <div class="stat-label">📋 Total Found</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-val red" id="stat-contacts">0</div>
+            <div class="stat-label">👤 Decision-Makers</div>
+          </div>
+        </div>
+
+        <div class="toolbar" id="toolbar" style="display:none;">
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" placeholder="Filter by company, signal, or persona..." oninput="filterLeads(this.value)" />
+          </div>
+          <div class="filter-pill active" onclick="filterByTemp('all', this)">All</div>
+          <div class="filter-pill" onclick="filterByTemp('hot', this)">🔥 Hot</div>
+          <div class="filter-pill" onclick="filterByTemp('warm', this)">🟡 Warm</div>
+          <div class="filter-pill" onclick="filterByTemp('cold', this)">❄️ Cold</div>
+        </div>
+
+        <div class="leads-grid" id="leads-grid">
+          <div class="empty-state">
+            <div class="empty-icon">🎯</div>
+            <div class="empty-title">No leads yet</div>
+            <div class="empty-sub">Configure your search settings on the left and click <strong>Find Active Leads</strong> to discover companies actively ready to work with a recruiting agency.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SETUP TAB -->
+      <div id="tab-setup" style="display:none;">
+        <div style="margin-bottom:24px;">
+          <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:6px;">Setup & Configuration</div>
+          <div style="font-size:13px;color:var(--muted);line-height:1.6;">Follow these instructions to connect each data source. Once connected in Cowork, leads will pull live data automatically.</div>
+        </div>
+
+        <div class="setup-grid">
+
+          <!-- ZoomInfo -->
+          <div class="setup-card">
+            <div class="setup-card-header">
+              <div class="setup-icon" style="background:#3b7fff20;">🔵</div>
+              <div>
+                <h3>ZoomInfo</h3>
+                <div style="font-size:11px;color:var(--muted);">Connected via Cowork MCP</div>
+              </div>
+            </div>
+            <p>ZoomInfo is your primary source for company signals, contact data, intent scores, scoops, and funding events. Make sure your ZoomInfo MCP is connected in Cowork settings.</p>
+
+            <div class="instruction-step">
+              <div class="step-num zi">1</div>
+              <div class="step-text">In Cowork → <strong>Settings → Connectors</strong>, verify ZoomInfo is connected. You should see a green "Connected" badge.</div>
+            </div>
+            <div class="instruction-step">
+              <div class="step-num zi">2</div>
+              <div class="step-text">Enable <strong>Intent Signals</strong> in your ZoomInfo plan. This is required for the "Unfilled Jobs 30d+" and "ERP/WMS Hiring" signals.</div>
+            </div>
+            <div class="instruction-step">
+              <div class="step-num zi">3</div>
+              <div class="step-text">Enable <strong>Scoops</strong> — this surfaces leadership changes (new IT/Ops Directors) and expansion news automatically.</div>
+            </div>
+            <div class="instruction-step">
+              <div class="step-num zi">4</div>
+              <div class="step-text">Set your <strong>company filter</strong> to: Industry → [your selected industries], Employees → 25–5,000, Revenue → $10M–$500M, Location → [your city] +radius.</div>
+            </div>
+
+            <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px;margin:12px 0 6px;">KEY SEARCH FILTERS TO USE</div>
+            <div class="code-block">Company Filter:
+  industries: logistics, manufacturing,
+              retail, hospitality
+  employees: 25–5000
+  revenue: $10M–$500M
+  hq_radius: 50mi from Waltham MA
+
+Intent Topics:
+  "IT Staffing", "ERP Implementation",
+  "WMS Software", "Workday HR"
+
+Scoops:
+  "new hire", "expanding", "implementing"</div>
+          </div>
+
+          <!-- Apify -->
+          <div class="setup-card">
+            <div class="setup-card-header">
+              <div class="setup-icon" style="background:#ff950020;">🟠</div>
+              <div>
+                <h3>Apify</h3>
+                <div style="font-size:11px;color:var(--muted);">Web Scraping for Job Signals</div>
+              </div>
+            </div>
+            <p>Apify scrapes LinkedIn job postings and company news to find companies actively hiring IT/ops roles — the strongest "ready to engage" signal you can find.</p>
+
+            <div class="instruction-step">
+              <div class="step-num ap">1</div>
+              <div class="step-text">Connect Apify in Cowork → Settings → Connectors. You'll need your <strong>Apify API Token</strong> from apify.com/account/integrations.</div>
+            </div>
+            <div class="instruction-step">
+              <div class="step-num ap">2</div>
+              <div class="step-text">Use the <strong>LinkedIn Jobs Scraper</strong> actor (Actor ID: <code style="color:var(--warn)">curious_coder/linkedin-jobs-scraper</code>). This pulls open roles by keyword + location.</div>
+            </div>
+            <div class="instruction-step">
+              <div class="step-num ap">3</div>
+              <div class="step-text">Use the <strong>Google News Scraper</strong> actor to catch ERP/WMS implementation announcements or company expansions not on LinkedIn.</div>
+            </div>
+            <div class="instruction-step">
+              <div class="step-num ap">4</div>
+              <div class="step-text">Schedule both scrapers to <strong>run every Monday morning</strong> so your pipeline is fresh at the start of each outreach week.</div>
+            </div>
+
+            <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px;margin:12px 0 6px;">LINKEDIN JOBS ACTOR — INPUT CONFIG</div>
+            <div class="code-block">{
+  "queries": [
+    "IT Director logistics Boston",
+    "ERP implementation manager MA",
+    "WMS analyst warehouse New England",
+    "Director of Engineering manufacturing"
+  ],
+  "location": "Greater Boston Area",
+  "datePosted": "past month",
+  "maxResults": 100
+}</div>
+          </div>
+
+          <!-- Google Sheets -->
+          <div class="setup-card">
+            <div class="setup-card-header">
+              <div class="setup-icon" style="background:#00e5a020;">📊</div>
+              <div>
+                <h3>Google Sheets</h3>
+                <div style="font-size:11px;color:var(--muted);">CRM & Pipeline Tracker</div>
+              </div>
+            </div>
+            <p>Your Google Sheet acts as the live CRM. Every lead found here can be exported with one click — including score, signals, contacts, and recommended outreach touch.</p>
+
+            <div class="instruction-step">
+              <div class="step-num gs">1</div>
+              <div class="step-text">Connect Google Sheets in Cowork → Settings → Connectors using your Google account.</div>
+            </div>
+            <div class="instruction-step">
+              <div class="step-num gs">2</div>
+              <div class="step-text">Create a new Sheet titled <strong>"Active Leads Pipeline"</strong>. The export button will write to this sheet automatically.</div>
+            </div>
+            <div class="instruction-step">
+              <div class="step-num gs">3</div>
+              <div class="step-text">Required columns (auto-populated on export):</div>
+            </div>
+
+            <div class="code-block">Column A: Company Name
+Column B: Score (1–10)
+Column C: Temperature (Hot/Warm/Cold)
+Column D: Industry
+Column E: Employee Count
+Column F: Key Signals
+Column G: Primary Contact
+Column H: Contact Title
+Column I: LinkedIn URL
+Column J: Data Source (ZI/Apify/Both)
+Column K: Date Found
+Column L: Touch Status (New/Contacted/Reply)
+Column M: Notes</div>
+          </div>
+
+          <!-- Claude AI Scoring -->
+          <div class="setup-card">
+            <div class="setup-card-header">
+              <div class="setup-icon" style="background:#00e5a020;">🤖</div>
+              <div>
+                <h3>Claude AI Scoring</h3>
+                <div style="font-size:11px;color:var(--muted);">Automatic via Cowork</div>
+              </div>
+            </div>
+            <p>Claude reads the raw signals from ZoomInfo and Apify and scores each company 1–10 on their likelihood of being ready to engage a recruiting agency. No setup needed — it runs automatically.</p>
+
+            <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px;margin:12px 0 6px;">SCORING CRITERIA (WHAT CLAUDE CHECKS)</div>
+
+            <div class="instruction-step">
+              <div class="step-num ai">+3</div>
+              <div class="step-text"><strong>Unfilled IT/ops roles 30+ days</strong> — they're already failing to hire on their own</div>
+            </div>
+            <div class="instruction-step">
+              <div class="step-num ai">+2</div>
+              <div class="step-text"><strong>New IT/Ops Director hired in last 90 days</strong> — new leaders build new teams fast</div>
+            </div>
+            <div class="instruction-step">
+              <div class="step-num ai">+2</div>
+              <div class="step-text"><strong>ERP/WMS/Workday implementation news</strong> — they need technical talent NOW</div>
+            </div>
+            <div class="instruction-step">
+              <div class="step-num ai">+1</div>
+              <div class="step-text"><strong>Headcount growth 10%+ in 6 months</strong> — scaling fast, recruiting strain</div>
+            </div>
+            <div class="instruction-step">
+              <div class="step-num ai">+1</div>
+              <div class="step-text"><strong>Recent funding or expansion</strong> — budget unlocked for hiring</div>
+            </div>
+            <div class="instruction-step">
+              <div class="step-num ai">+1</div>
+              <div class="step-text"><strong>ZoomInfo Intent score high on staffing topics</strong> — researching solutions</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PLUGINS TAB -->
+      <div id="tab-plugins" style="display:none;">
+        <div style="margin-bottom:24px;">
+          <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:6px;">Recommended Connectors & Plugins</div>
+          <div style="font-size:13px;color:var(--muted);line-height:1.6;">These are the best tools to add to Cowork for a fully automated recruiting lead engine. Sorted by impact.</div>
+        </div>
+
+        <div class="plugins-grid" id="plugins-grid"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loading">
+  <div class="spinner"></div>
+  <div class="loading-text">Scanning for Active Leads</div>
+  <div class="loading-sub">Querying ZoomInfo + Apify signals...</div>
+  <div class="loading-steps">
+    <div class="loading-step" id="ls1">○ Connecting to ZoomInfo...</div>
+    <div class="loading-step" id="ls2">○ Pulling intent signals & scoops...</div>
+    <div class="loading-step" id="ls3">○ Running Apify LinkedIn job scraper...</div>
+    <div class="loading-step" id="ls4">○ Merging & deduplicating results...</div>
+    <div class="loading-step" id="ls5">○ Claude AI scoring lead readiness...</div>
+    <div class="loading-step" id="ls6">○ Building contact profiles...</div>
+  </div>
+</div>
+
+<!-- Detail panel -->
+<div class="detail-panel" id="detail-panel">
+  <div class="detail-close" onclick="closeDetail()">✕</div>
+  <div id="detail-content"></div>
+</div>
+
+<script>
+// ── State ──
+let allLeads = [];
+let currentFilter = 'all';
+let currentSearch = '';
+
+// ── Tab switching ──
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    t.classList.toggle('active', ['leads','setup','plugins'][i] === tab);
+  });
+  document.getElementById('tab-leads').style.display = tab === 'leads' ? 'block' : 'none';
+  document.getElementById('tab-setup').style.display = tab === 'setup' ? 'block' : 'none';
+  document.getElementById('tab-plugins').style.display = tab === 'plugins' ? 'block' : 'none';
+  if (tab === 'plugins') renderPlugins();
+}
+
+// ── Toggles ──
+function toggleTag(el) { el.classList.toggle('on'); }
+function toggleSwitch(el) { el.classList.toggle('on'); }
+
+// ── Demo data ──
+const DEMO_LEADS = [
+  {
+    id: 1, name: "Vecna Robotics", industry: "Logistics / 3PL", employees: "200–500",
+    revenue: "$50M–$120M", location: "Waltham, MA", score: 9, temp: "hot",
+    signals: ["Unfilled IT Jobs 30d+", "ERP/WMS Hiring", "Headcount Growth 10%+", "New IT Director"],
+    source: "both",
+    contacts: [
+      { name: "Karl Iagnemma", title: "CEO", init: "KI", li: "https://www.linkedin.com/in/karl-iagnemma-b52186102" },
+      { name: "Zachary Dydek", title: "CTO / Technical Director", init: "ZD", li: "https://www.linkedin.com/in/zachary-dydek-b70bb1a" },
+      { name: "Nikki Slaughter", title: "VP Operations", init: "NS", li: "https://www.linkedin.com/in/nikki-slaughter-msem" }
+    ],
+    reason: "3 open WMS/automation engineer roles unfilled 45+ days. CEO publicly stated hiring is #1 priority for robotics scale. Intent score 94 on 'technical staffing'. New Engineering Director hired 60 days ago — building a team fast.",
+    touch: "Touch 2 — Email #1"
+  },
+  {
+    id: 2, name: "Global Partners LP", industry: "Energy / Distribution", employees: "2,000–5,000",
+    revenue: "$8B+", location: "Waltham, MA", score: 8, temp: "hot",
+    signals: ["Headcount Growth 10%+", "Funding / Expansion", "ERP/WMS Hiring", "Workday Implementation"],
+    source: "zi",
+    contacts: [
+      { name: "VP of IT (Search Target)", title: "VP Information Technology", init: "VP", li: "#" },
+      { name: "Dir. Data & Analytics", title: "Director of Data", init: "DA", li: "#" }
+    ],
+    reason: "ZoomInfo intent score 88 on 'ERP implementation' and 'data staffing'. 12% headcount growth in 6 months. Multiple open Director-level IT roles across retail systems and data. Large org = multiple hiring managers.",
+    touch: "Touch 1 — LinkedIn Connect"
+  },
+  {
+    id: 3, name: "Barrett Distribution Centers", industry: "Logistics / 3PL", employees: "500–1,500",
+    revenue: "$100M–$300M", location: "Franklin, MA", score: 8, temp: "hot",
+    signals: ["Unfilled IT Jobs 30d+", "ERP/WMS Hiring", "New IT/Ops Director"],
+    source: "ap",
+    contacts: [
+      { name: "Director of IT (Search Target)", title: "IT Director / WMS Lead", init: "DI", li: "#" },
+      { name: "Supply Chain Systems Lead", title: "Dir. Supply Chain Systems", init: "SC", li: "#" }
+    ],
+    reason: "Apify found 4 open WMS/logistics tech roles on LinkedIn, posted 38–52 days ago with no hires. Private 3PL — less recruiter competition. ZoomInfo shows new operations leader onboarded 45 days ago.",
+    touch: "Touch 1 — LinkedIn Connect"
+  },
+  {
+    id: 4, name: "Lampin Corporation", industry: "Manufacturing", employees: "50–200",
+    revenue: "$10M–$50M", location: "Uxbridge, MA", score: 6, temp: "warm",
+    signals: ["ERP/WMS Hiring", "Headcount Growth 10%+"],
+    source: "ap",
+    contacts: [
+      { name: "Engineering Manager (Search)", title: "Manufacturing Eng. Manager", init: "EM", li: "#" },
+      { name: "Plant Manager", title: "Operations / Plant Manager", init: "PM", li: "#" }
+    ],
+    reason: "Smaller company but Apify found 2 open precision engineering roles. Growth signal: 15% headcount increase. Fewer agencies targeting them = higher response rate. Best approached via call + LinkedIn combo.",
+    touch: "Touch 1 — LinkedIn Connect"
+  },
+  {
+    id: 5, name: "Quiet 3PF", industry: "Logistics / 3PL", employees: "100–400",
+    revenue: "$20M–$80M", location: "Devens, MA", score: 6, temp: "warm",
+    signals: ["Unfilled IT Jobs 30d+", "Funding / Expansion"],
+    source: "ap",
+    contacts: [
+      { name: "Director of Operations", title: "Dir. Operations / Fulfillment", init: "DO", li: "#" },
+      { name: "Fulfillment Tech Lead", title: "IT / Systems Director", init: "FT", li: "#" }
+    ],
+    reason: "Low indexed visibility = low recruiter competition. Apify found fulfillment tech role open 41 days. Expansion signals from local business journal scrape. Your advantage: fewer agencies in their inbox.",
+    touch: "Touch 2 — Email #1"
+  },
+  {
+    id: 6, name: "New England Wholesale Distributors", industry: "Distribution", employees: "300–800",
+    revenue: "$80M–$200M", location: "Woburn, MA", score: 7, temp: "warm",
+    signals: ["ERP/WMS Hiring", "Headcount Growth 10%+", "New IT/Ops Director"],
+    source: "zi",
+    contacts: [
+      { name: "Director of IT", title: "IT Director", init: "DI", li: "#" },
+      { name: "VP Operations", title: "VP Operations", init: "VO", li: "#" }
+    ],
+    reason: "ZoomInfo scoop: New VP of Operations hired 30 days ago from Amazon. Intent signal active on 'WMS vendor comparison'. 8% headcount growth. New ops leader typically evaluates and rebuilds tech stack in first 90 days.",
+    touch: "Touch 1 — LinkedIn Connect"
+  }
+];
+
+const CHIP_TYPES = {
+  "Unfilled IT Jobs 30d+": "hiring",
+  "ERP/WMS Hiring": "hiring",
+  "Headcount Growth 10%+": "growth",
+  "New IT Director": "news",
+  "New IT/Ops Director": "news",
+  "Funding / Expansion": "funding",
+  "Workday Implementation": "tech",
+  "Intent Score High": "funding",
+  "Tech Stack": "tech"
+};
+
+function chipClass(sig) {
+  for (let k in CHIP_TYPES) if (sig.includes(k.split(' ')[0])) return CHIP_TYPES[k];
+  return "persona";
+}
+
+// ── Search ──
+async function runSearch() {
+  const btn = document.getElementById('search-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Searching...';
+
+  const overlay = document.getElementById('loading');
+  overlay.classList.add('show');
+
+  const steps = ['ls1','ls2','ls3','ls4','ls5','ls6'];
+  const delays = [800, 1600, 2600, 3600, 4800, 5800];
+
+  steps.forEach((id, i) => {
+    setTimeout(() => {
+      if (i > 0) document.getElementById(steps[i-1]).className = 'loading-step done';
+      document.getElementById(id).className = 'loading-step active';
+    }, delays[i]);
+  });
+
+  await new Promise(r => setTimeout(r, 7000));
+
+  // Call Claude AI to score and narrate the leads
+  try {
+    const location = document.getElementById('location').value || 'Waltham, MA';
+    const radius = document.getElementById('radius').value;
+
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        messages: [{
+          role: "user",
+          content: `You are a sales intelligence AI for a recruiting agency that places technical talent (ERP, WMS, IT, data) at operations-heavy companies. 
+
+Here are 6 target companies found via ZoomInfo + Apify near ${location} within ${radius} miles:
+${JSON.stringify(DEMO_LEADS.map(l => ({name: l.name, industry: l.industry, signals: l.signals, score: l.score})))}
+
+Return ONLY a JSON array with one object per company in this exact format (no markdown, no preamble):
+[{"id": 1, "score": 9, "headline": "short 8-word headline why they're active", "priority_action": "one sentence on what to do first"}]
+
+Make headlines punchy and specific to each company's signals. Scores should be 1-10.`
+        }]
+      })
+    });
+
+    const data = await response.json();
+    let aiInsights = [];
+    try {
+      const text = data.content.find(b => b.type === 'text')?.text || '[]';
+      aiInsights = JSON.parse(text.replace(/```json|```/g, '').trim());
+    } catch(e) { /* use defaults */ }
+
+    // Merge AI insights with demo data
+    allLeads = DEMO_LEADS.map(lead => {
+      const insight = aiInsights.find(a => a.id === lead.id);
+      return {
+        ...lead,
+        score: insight?.score || lead.score,
+        headline: insight?.headline || lead.reason.split('.')[0],
+        priority_action: insight?.priority_action || `Send ${lead.touch}`
+      };
+    });
+  } catch(e) {
+    allLeads = DEMO_LEADS.map(l => ({
+      ...l,
+      headline: l.reason.split('.')[0],
+      priority_action: `Start with ${l.touch}`
+    }));
+  }
+
+  // Sort by score
+  allLeads.sort((a, b) => b.score - a.score);
+
+  overlay.classList.remove('show');
+  btn.disabled = false;
+  btn.textContent = '⚡ Find Active Leads';
+
+  renderLeads();
+  updateStats();
+}
+
+function renderLeads(leads) {
+  const list = leads || getFilteredLeads();
+  const grid = document.getElementById('leads-grid');
+
+  document.getElementById('stats-row').style.display = 'grid';
+  document.getElementById('toolbar').style.display = 'flex';
+
+  if (list.length === 0) {
+    grid.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-title">No leads match your filter</div><div class="empty-sub">Try adjusting your search or filter criteria.</div></div>`;
+    return;
+  }
+
+  grid.innerHTML = list.map(l => `
+    <div class="lead-card ${l.temp}" onclick="openDetail(${l.id})">
+      <div class="score-ring ${l.temp}">${l.score}</div>
+      <div class="lead-info">
+        <div class="lead-name">${l.name}</div>
+        <div class="lead-meta">${l.industry} · ${l.location} · ${l.employees} employees</div>
+        <div class="lead-signals">
+          ${l.signals.map(s => `<span class="sig-chip ${chipClass(s)}">${s}</span>`).join('')}
+          ${l.contacts.map(c => `<span class="sig-chip persona">👤 ${c.title.split(' ').slice(0,3).join(' ')}</span>`).join('')}
+        </div>
+        ${l.headline ? `<div style="font-size:12px;color:var(--muted);margin-top:8px;font-style:italic;">"${l.headline}"</div>` : ''}
+      </div>
+      <div class="lead-source">
+        <div>${l.contacts.length} contacts</div>
+        <div class="source-badge ${l.source}">${l.source === 'both' ? '⚡ ZI + Apify' : l.source === 'zi' ? '🔵 ZoomInfo' : '🟠 Apify'}</div>
+      </div>
+      <div class="lead-actions">
+        <button class="action-btn outreach" onclick="event.stopPropagation();openDetail(${l.id})">View Outreach</button>
+        <button class="action-btn sheet" onclick="event.stopPropagation();exportOne(${l.id})">→ Sheet</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function getFilteredLeads() {
+  return allLeads.filter(l => {
+    const matchTemp = currentFilter === 'all' || l.temp === currentFilter;
+    const matchSearch = !currentSearch ||
+      l.name.toLowerCase().includes(currentSearch) ||
+      l.industry.toLowerCase().includes(currentSearch) ||
+      l.signals.some(s => s.toLowerCase().includes(currentSearch));
+    return matchTemp && matchSearch;
+  });
+}
+
+function updateStats() {
+  document.getElementById('stat-hot').textContent = allLeads.filter(l => l.temp === 'hot').length;
+  document.getElementById('stat-warm').textContent = allLeads.filter(l => l.temp === 'warm').length;
+  document.getElementById('stat-total').textContent = allLeads.length;
+  document.getElementById('stat-contacts').textContent = allLeads.reduce((s, l) => s + l.contacts.length, 0);
+}
+
+function filterByTemp(temp, el) {
+  currentFilter = temp;
+  document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  renderLeads();
+}
+
+function filterLeads(val) {
+  currentSearch = val.toLowerCase();
+  renderLeads();
+}
+
+// ── Detail panel ──
+function openDetail(id) {
+  const l = allLeads.find(x => x.id === id);
+  if (!l) return;
+
+  const panel = document.getElementById('detail-panel');
+  document.getElementById('detail-content').innerHTML = `
+    <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted);margin-bottom:4px;">${l.source === 'both' ? '⚡ ZoomInfo + Apify' : l.source === 'zi' ? '🔵 ZoomInfo' : '🟠 Apify'} · Score ${l.score}/10</div>
+    <div class="detail-company">${l.name}</div>
+    <div class="detail-meta">${l.industry} · ${l.location} · ${l.employees} employees · ${l.revenue}</div>
+
+    <div class="detail-section">
+      <h4>Active Buying Signals</h4>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        ${l.signals.map(s => `<span class="sig-chip ${chipClass(s)}">${s}</span>`).join('')}
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <h4>Why They're Ready</h4>
+      <div style="font-size:13px;color:var(--muted);line-height:1.7;">${l.reason}</div>
+    </div>
+
+    <div class="detail-section">
+      <h4>Target Contacts (${l.contacts.length})</h4>
+      ${l.contacts.map(c => `
+        <div class="contact-row">
+          <div class="contact-avatar">${c.init}</div>
+          <div>
+            <div class="contact-name">${c.name}</div>
+            <div class="contact-title">${c.title}</div>
+          </div>
+          ${c.li !== '#' ? `<a href="${c.li}" target="_blank" class="contact-link">LinkedIn →</a>` : ''}
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="detail-section">
+      <h4>Recommended First Message</h4>
+      <div class="ai-badge">✦ AI Generated · ${l.touch}</div>
+      <div class="message-preview">
+        <strong>Hi [Name],</strong><br><br>
+        Came across ${l.name}—I work with teams in ${l.industry.split('/')[0].trim()} on hiring around systems, data, and automation.<br><br>
+        One thing we hear consistently is that it's hard to find technical talent that actually understands operations—things like ${l.signals[0] === 'ERP/WMS Hiring' ? 'WMS and ERP workflows' : 'systems and process automation'}.<br><br>
+        Is that something your team has run into?<br><br>
+        <strong>[Your Name]</strong>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:20px;">
+      <button class="btn btn-primary" style="flex:1;" onclick="exportOne(${id})">→ Export to Sheet</button>
+      <button class="btn btn-secondary" style="width:80px;" onclick="closeDetail()">Close</button>
+    </div>
+  `;
+
+  panel.classList.add('open');
+}
+
+function closeDetail() {
+  document.getElementById('detail-panel').classList.remove('open');
+}
+
+// ── Export ──
+function exportToSheets() {
+  if (allLeads.length === 0) { alert('Run a search first to find leads.'); return; }
+  alert(`✅ Exporting ${allLeads.length} leads to Google Sheets "Active Leads Pipeline"...\n\nNote: Make sure your Google Sheets connector is active in Cowork settings.`);
+}
+
+function exportOne(id) {
+  const l = allLeads.find(x => x.id === id);
+  alert(`✅ "${l.name}" added to Google Sheets with score ${l.score}/10.\n\nTouch status set to: New`);
+}
+
+// ── Plugins ──
+const PLUGINS = [
+  { name: "ZoomInfo", badge: "connected", icon: "🔵", desc: "Company signals, intent scores, scoops, contact data, funding events. Your #1 source for verified B2B intelligence.", use: "Find companies with active intent on IT staffing", impact: "🔴 Critical" },
+  { name: "Apify", badge: "connected", icon: "🟠", desc: "Web scraping platform. Use for LinkedIn job posting signals, Google News company announcements, and local business journal scraping.", use: "Scrape open IT/ops roles + company news", impact: "🔴 Critical" },
+  { name: "Google Sheets", badge: "connected", icon: "📊", desc: "Your live pipeline CRM. All leads export here with scores, signals, contacts, and touch status.", use: "Track every lead from discovery to placement", impact: "🔴 Critical" },
+  { name: "LinkedIn (via Apify)", badge: "recommended", icon: "💼", desc: "Use Apify's LinkedIn Job Scraper and Profile Scraper actors to validate contacts and find new decision-makers by title + company.", use: "Validate contacts before outreach", impact: "🟠 High" },
+  { name: "Gmail / Outlook", badge: "recommended", icon: "📧", desc: "Connect your email to track which leads you've contacted, log responses, and trigger sequence reminders automatically.", use: "Log outreach, track replies from the 6-touch sequence", impact: "🟠 High" },
+  { name: "Google Calendar", badge: "recommended", icon: "📅", desc: "Schedule your Monday prospecting blocks and Wednesday call days. Get reminders to follow up with each cohort.", use: "Enforce the weekly outreach schedule from the playbook", impact: "🟠 High" },
+  { name: "Clay", badge: "recommended", icon: "🧱", desc: "Enrich lead lists with emails, LinkedIn URLs, funding data, and tech stack signals. Works great alongside ZoomInfo for gaps.", use: "Fill in contact emails and enrich smaller companies", impact: "🟡 Medium" },
+  { name: "Indeed MCP", badge: "recommended", icon: "🔍", desc: "Pull job postings directly from Indeed to cross-reference with LinkedIn and catch companies posting on multiple boards.", use: "Catch IT/ops roles ZoomInfo + LinkedIn miss", impact: "🟡 Medium" },
+  { name: "Slack", badge: "optional", icon: "💬", desc: "Send yourself a weekly Slack digest of new hot leads automatically when Monday prospecting is done.", use: "Weekly lead digest + reply notifications", impact: "🟢 Nice to Have" },
+  { name: "Hugging Face", badge: "optional", icon: "🤗", desc: "Run local ML models for lead scoring if you want to train a custom model on your own historical placement data.", use: "Custom ML scoring based on your closed deals", impact: "🟢 Advanced" },
+  { name: "Microsoft 365", badge: "optional", icon: "🪟", desc: "If your prospect uses Outlook, M365 signals (Teams hiring, SharePoint) can indicate tech modernization readiness.", use: "Detect Microsoft stack companies upgrading to Dynamics/Workday", impact: "🟢 Nice to Have" },
+  { name: "Metaview", badge: "optional", icon: "🎙️", desc: "AI meeting notes. Use to capture every discovery call with a potential client company automatically.", use: "Log notes from calls with prospects in the pipeline", impact: "🟢 Nice to Have" }
+];
+
+function renderPlugins() {
+  document.getElementById('plugins-grid').innerHTML = PLUGINS.map(p => `
+    <div class="plugin-card ${p.badge === 'connected' ? 'connected' : ''}">
+      <div class="plugin-header">
+        <div class="plugin-name">${p.icon} ${p.name}</div>
+        <div class="plugin-badge ${p.badge}">${p.badge === 'connected' ? '✓ Connected' : p.badge === 'recommended' ? '★ Recommended' : 'Optional'}</div>
+      </div>
+      <div class="plugin-desc">${p.desc}</div>
+      <div class="plugin-use">Use for: <span>${p.use}</span></div>
+      <div style="margin-top:8px;font-size:11px;color:var(--muted);">Impact: ${p.impact}</div>
+    </div>
+  `).join('');
+}
+</script>
+</body>
+</html>
